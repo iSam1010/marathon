@@ -2095,11 +2095,11 @@ function updateBars(){
   if (tvScoreBig) tvScoreBig.textContent = `${fmt(total)} pts`;
 
   // TV summary line under the progress bar
-  if (showExtra) {
-    tvSummary.innerHTML = `${fmt(darts)} darts • ${pct.toFixed(1)}% of ${fmt(goal)} • <span class="team-avg">Team avg ${team3DAvg}</span>`;
-  } else {
-    tvSummary.innerHTML = `${pct.toFixed(1)}% of ${fmt(goal)} • <span class="team-avg">Team avg ${team3DAvg}</span>`;
-  }
+ if (showExtra) {
+  tvSummary.innerHTML = `${fmt(darts)} darts • ${pct.toFixed(1)}% of ${fmt(goal)} • Team avg ${team3DAvg}`;
+} else {
+  tvSummary.innerHTML = `${pct.toFixed(1)}% of ${fmt(goal)}`;
+}
 }
 
 
