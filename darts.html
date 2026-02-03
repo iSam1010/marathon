@@ -691,6 +691,11 @@ body {
     align-items:center;
     gap:8px;
   }
+  .team-avg{
+  color:var(--muted);
+  font-weight:700;
+  white-space:nowrap;
+}
 
   #big180 {
     position: fixed;
@@ -2081,19 +2086,27 @@ function updateBars(){
   const total = teamTotal(), darts = teamDarts();
   const pct = Math.min(100, goal > 0 ? (total / goal) * 100 : 0);
 
+  // Team 3-dart average
+  const team3DAvg = darts > 0 ? ((total / darts) * 3).toFixed(1) : '0.0';
+
   bar.style.width = pct + '%';
   summary.innerHTML = `<span><b>Team total:</b> ${fmt(total)} pts</span><span><b>Target:</b> ${fmt(goal)} pts</span><span><b>Darts:</b> ${fmt(darts)}</span><span><b>Progress:</b> ${pct.toFixed(1)}%</span>`;
-  teamSummarySmall.textContent = `Team: ${fmt(total)} pts • ${fmt(darts)} darts`;
 
+  // Inline small summary (scoring tab)
+  teamSummarySmall.innerHTML = `Team: ${fmt(total)} pts • ${fmt(darts)} darts • <span class="team-avg">Avg ${team3DAvg}</span>`;
+
+  // TV progress bar + big score
   tvBar.style.width = pct + '%';
   if (tvScoreBig) tvScoreBig.textContent = `${fmt(total)} pts`;
 
+  // TV summary line under the progress bar
   if (showExtra) {
-    tvSummary.textContent = `${fmt(darts)} darts • ${pct.toFixed(1)}% of ${fmt(goal)}`;
+    tvSummary.innerHTML = `${fmt(darts)} darts • ${pct.toFixed(1)}% of ${fmt(goal)} • <span class="team-avg">Team avg ${team3DAvg}</span>`;
   } else {
-    tvSummary.textContent = `${pct.toFixed(1)}% of ${fmt(goal)}`;
+    tvSummary.innerHTML = `${pct.toFixed(1)}% of ${fmt(goal)} • <span class="team-avg">Team avg ${team3DAvg}</span>`;
   }
 }
+
 
 function renderPlayers(){
   // Clean up any ghost players that are not in throwOrder
