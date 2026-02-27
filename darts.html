@@ -2511,13 +2511,29 @@ function renderTV(sortedArr){
 
 function deletePlayerFromCloud(id){
   if (!eventRef || !firebase || !firebase.firestore) return;
+
   try{
     const del = firebase.firestore.FieldValue.delete();
+    const arrRem = firebase.firestore.FieldValue.arrayRemove;
+
     const updates = {};
     updates[`players.${id}`] = del;
-    eventRef.set(updates, { merge:true });
+
+    // ALSO remove them from throwOrder in the cloud so they can't respawn
+    updates['throwOrder'] = arrRem(id);
+
+    // Optional: stamp updated so other clients notice fast
+    updates['updated'] = nowTs();
+
+    // Use update() for an atomic patch (safer than set/merge for arrays)
+    eventRef.update(updates).catch(err=>{
+      console.warn('Cloud player delete failed', err);
+      nudge('Cloud error - delete not synced', 'error');
+    });
+
   }catch(e){
     console.warn('Cloud player delete failed', e);
+    nudge('Cloud error - delete not synced', 'error');
   }
 }
 
@@ -2585,37 +2601,39 @@ li.querySelector('[data-edit-name]').onclick=()=>{
 };
 
 
-    /* delete player */
+/* delete player */
 const delBtn = li.querySelector('[data-delete-player]');
-delBtn.onclick = () => {
-  const p = players[id];
-  if (!p) return;
+if (delBtn){
+  delBtn.onclick = () => {
+    const p = players[id];
+    if (!p) return;
 
-  if (!confirm(`Delete player "${p.name}" and all their scores?`)) return;
+    if (!confirm(`Delete player "${p.name}" and all their scores?`)) return;
 
-  // 1) Local delete
-  delete players[id];
-  throwOrder = throwOrder.filter(pid => pid !== id);
-  boardPlayers = (boardPlayers || []).filter(pid => pid !== id);
-  saveBoard();
+    // 1) Local delete
+    delete players[id];
+    throwOrder = throwOrder.filter(pid => pid !== id);
+    boardPlayers = (boardPlayers || []).filter(pid => pid !== id);
+    saveBoard();
 
-  if (currentThrowerId === id) {
-    const pool = rosterIds();
-    setThrower(pool[0] || null);
-  }
+    if (currentThrowerId === id) {
+      const pool = rosterIds();
+      setThrower(pool[0] || null);
+    }
 
-  // 2) Save locally only (no full cloud write)
-  saveLocal(true);
+    // 2) Save locally only (no full cloud write)
+    saveLocal(true);
 
-  // 3) Explicitly delete from Firestore so it can't be resurrected
-  deletePlayerFromCloud(id);
+    // 3) Explicitly delete from Firestore so it can't be resurrected
+    deletePlayerFromCloud(id);
+    nudge('Player deleted', 'success');
 
-  // 4) Re-render UI
-  renderPlayers();
-  renderOrderList();
-  updateBars();
-};
-
+    // 4) Re-render UI
+    renderPlayers();
+    renderOrderList();
+    updateBars();
+  };
+}
 
     btns.append(up,down,photoBtn,rem);
     orderList.appendChild(li);
