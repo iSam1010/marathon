@@ -1034,8 +1034,11 @@ body {
       <div class="card">
         <label>Add player</label>
         <input id="pname" placeholder="Player name" />
-        <label>Profile photo (optional)</label>
+       <label>Profile photo (recommended)</label>
         <input id="pphoto" type="file" accept="image/*" />
+        <p id="photoWarn" class="small" style="color:#facc15; display:none;">
+  No photo added - adding one helps identify players quickly
+</p>
         <div class="row" style="margin-top:8px;">
           <button id="addPlayer" type="button">Add player</button>
           <button id="resetAll" class="secondary" type="button">Reset all scores</button>
@@ -1200,9 +1203,11 @@ body {
     <label>Name</label>
     <input id="quickName" placeholder="Player name" />
 
-    <label style="margin-top:8px;">Photo (optional)</label>
+    <label style="margin-top:8px;">Photo (recommended)</label>
     <input id="quickPhoto" type="file" accept="image/*" />
-
+<p id="quickPhotoWarn" class="small" style="color:#facc15; display:none;">
+  No photo added - adding one helps identify players quickly
+</p>
     <div id="quickPreviewWrap" style="margin-top:8px; display:none; align-items:center; gap:8px;">
       <div id="quickPreview" style="
         width:40px;
@@ -2199,16 +2204,24 @@ if (quickRemovePhoto){
 
 if (quickAddConfirm){
   quickAddConfirm.onclick = ()=>{
-    const name = (quickName.value || '').trim();
+  const name = (quickName.value || '').trim();
 
-    if(!name){
-      quickName.focus();
-      return;
-    }
+  if(!name){
+    quickName.focus();
+    return;
+  }
 
-    addPlayer(name, quickPhotoData);
-    closeQuickAdd();
-  };
+  // Show warning if no photo
+  const warn = document.getElementById('quickPhotoWarn');
+  if(!quickPhotoData && warn){
+    warn.style.display = 'block';
+    setTimeout(()=>{ warn.style.display = 'none'; }, 3000);
+  }
+
+  addPlayer(name, quickPhotoData);
+
+  closeQuickAdd();
+};
 }
 
 /* Throw pool helpers */
@@ -2718,20 +2731,32 @@ goalEl.oninput=()=>{
   if(isNaN(v)||v<=0) return;
   setGoal(v);
 };
-addPlayerBtn.onclick=async ()=>{
-  const name=(pname.value||'').trim();
+addPlayerBtn.onclick = async ()=>{
+  const name = (pname.value || '').trim();
   if(!name){
     pname.focus();
     nudge('Enter a player name');
     return;
   }
-  const f=pphoto.files[0];
-  let data=null;
+
+  const f = pphoto.files[0];
+  let data = null;
+
   if(f){
-    data=await fileToCompressedDataURL(f,256).catch(()=>null);
+    data = await fileToCompressedDataURL(f,256).catch(()=>null);
   }
+
+  // Show warning if no photo
+  const warn = document.getElementById('photoWarn');
+  if(!f && warn){
+    warn.style.display = 'block';
+    setTimeout(()=>{ warn.style.display = 'none'; }, 3000);
+  }
+
   addPlayer(name, data);
-  pname.value=''; pphoto.value='';
+
+  pname.value = '';
+  pphoto.value = '';
 };
 resetAllBtn.onclick=()=>{
   openPasswordModal(()=>{ 
