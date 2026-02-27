@@ -1226,6 +1226,21 @@ body {
     </div>
   </div>
 </div>
+  <!-- No photo confirmation modal -->
+<div id="photoConfirmMask" class="mask" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="photoConfirmTitle">
+    <h3 id="photoConfirmTitle">No photo added</h3>
+    <p class="small" style="margin:6px 0 0;">
+      Adding a photo helps identify players quickly.
+    </p>
+
+    <div class="modal-row" style="margin-top:12px;">
+      <button id="photoConfirmCancel" class="secondary" type="button">Cancel</button>
+      <button id="photoConfirmAddPhoto" class="secondary" type="button">Add photo</button>
+      <button id="photoConfirmAddAnyway" class="warn" type="button">Add anyway</button>
+    </div>
+  </div>
+</div>
 <!-- Firebase (compat) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -1687,6 +1702,10 @@ const eventIdInput = $('#eventId');
 const startJoinBtn = $('#startJoin');
 const joinBtn = $('#joinBtn');
 const refreshBtn = $('#refreshBtn');
+  const photoConfirmMask = $('#photoConfirmMask');
+const photoConfirmCancel = $('#photoConfirmCancel');
+const photoConfirmAddPhoto = $('#photoConfirmAddPhoto');
+const photoConfirmAddAnyway = $('#photoConfirmAddAnyway');
   pname.addEventListener('keydown', async (e)=>{
   if (e.key === 'Enter'){
     e.preventDefault();
@@ -2141,6 +2160,52 @@ function renderBoardCount(){
     ? `${boardPlayers.length} selected`
     : 'All players';
 }
+  /* No photo confirmation popup */
+let pendingAdd = null;
+// pendingAdd shape:
+// { source: 'setup'|'quick', name: string, addFn: Function, openPhotoFn: Function }
+
+function openPhotoConfirm(payload){
+  pendingAdd = payload;
+
+  photoConfirmMask.classList.add('show');
+  photoConfirmMask.setAttribute('aria-hidden','false');
+}
+
+function closePhotoConfirm(){
+  photoConfirmMask.classList.remove('show');
+  photoConfirmMask.setAttribute('aria-hidden','true');
+  pendingAdd = null;
+}
+
+// Click outside closes
+photoConfirmMask.addEventListener('click', (e)=>{
+  if (e.target === photoConfirmMask){
+    closePhotoConfirm();
+  }
+});
+
+photoConfirmCancel.onclick = ()=> {
+  closePhotoConfirm();
+};
+
+photoConfirmAddPhoto.onclick = ()=> {
+  if (!pendingAdd) return;
+
+  const fn = pendingAdd.openPhotoFn;
+  closePhotoConfirm();
+  if (typeof fn === 'function') fn();
+};
+
+photoConfirmAddAnyway.onclick = ()=> {
+  if (!pendingAdd) return;
+
+  const fn = pendingAdd.addFn;
+  const name = pendingAdd.name;
+
+  closePhotoConfirm();
+  if (typeof fn === 'function') fn(name);
+};
 /* Quick Add Player modal */
 function openQuickAdd(){
   if (!quickAddMask) return;
@@ -2211,15 +2276,21 @@ if (quickAddConfirm){
     return;
   }
 
-  // Show warning if no photo
-  const warn = document.getElementById('quickPhotoWarn');
-  if(!quickPhotoData && warn){
-    warn.style.display = 'block';
-    setTimeout(()=>{ warn.style.display = 'none'; }, 3000);
+  // If no photo selected, confirm
+  if(!quickPhotoData){
+    openPhotoConfirm({
+      source: 'quick',
+      name,
+      openPhotoFn: ()=>{ quickPhoto.click(); },
+      addFn: (n)=>{
+        addPlayer(n, null);
+        closeQuickAdd();
+      }
+    });
+    return;
   }
 
   addPlayer(name, quickPhotoData);
-
   closeQuickAdd();
 };
 }
@@ -2739,20 +2810,24 @@ addPlayerBtn.onclick = async ()=>{
     return;
   }
 
-  const f = pphoto.files[0];
-  let data = null;
+  const f = pphoto.files && pphoto.files[0];
 
-  if(f){
-    data = await fileToCompressedDataURL(f,256).catch(()=>null);
+  // If no photo chosen, confirm
+  if (!f){
+    openPhotoConfirm({
+      source: 'setup',
+      name,
+      openPhotoFn: ()=>{ pphoto.click(); },
+      addFn: (n)=>{
+        addPlayer(n, null);
+        pname.value = '';
+        pphoto.value = '';
+      }
+    });
+    return;
   }
 
-  // Show warning if no photo
-  const warn = document.getElementById('photoWarn');
-  if(!f && warn){
-    warn.style.display = 'block';
-    setTimeout(()=>{ warn.style.display = 'none'; }, 3000);
-  }
-
+  const data = await fileToCompressedDataURL(f,256).catch(()=>null);
   addPlayer(name, data);
 
   pname.value = '';
