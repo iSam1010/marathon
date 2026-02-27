@@ -1706,27 +1706,10 @@ const refreshBtn = $('#refreshBtn');
 const photoConfirmCancel = $('#photoConfirmCancel');
 const photoConfirmAddPhoto = $('#photoConfirmAddPhoto');
 const photoConfirmAddAnyway = $('#photoConfirmAddAnyway');
-  pname.addEventListener('keydown', async (e)=>{
+ pname.addEventListener('keydown', (e)=>{
   if (e.key === 'Enter'){
     e.preventDefault();
-
-    const name = (pname.value || '').trim();
-    if (!name){
-      pname.focus();
-      return;
-    }
-
-    const f = pphoto.files[0];
-    let data = null;
-
-    if (f){
-      data = await fileToCompressedDataURL(f,256).catch(()=>null);
-    }
-
-    addPlayer(name, data);
-
-    pname.value = '';
-    pphoto.value = '';
+    addPlayerBtn.click();
   }
 });
 const quickAddBtn = $('#quickAddBtn');
@@ -1800,20 +1783,21 @@ const teamDarts  = ()=> Object.values(players).reduce((s,p)=>s+(p.darts||0),0);
 const threeDA = p => (p.darts>0 ? ((p.score/p.darts)*3) : 0);
 function nudge(msg, type){
   // msg: string or empty
-  // type: 'error' for red, anything else/undefined = normal muted text
+  // type: 'error' | 'success' | undefined
 
   nudgeEl.textContent = msg || '';
 
   if (!msg){
-    // Reset to default colour when clearing
     nudgeEl.style.color = 'var(--muted)';
     return;
   }
 
   if (type === 'error'){
     nudgeEl.style.color = '#f97373'; // red
+  } else if (type === 'success'){
+    nudgeEl.style.color = '#4ade80'; // green
   } else {
-    nudgeEl.style.color = 'var(--muted)'; // default muted colour
+    nudgeEl.style.color = 'var(--muted)';
   }
 
   setTimeout(()=>{
@@ -2282,16 +2266,18 @@ if (quickAddConfirm){
       source: 'quick',
       name,
       openPhotoFn: ()=>{ quickPhoto.click(); },
-      addFn: (n)=>{
-        addPlayer(n, null);
-        closeQuickAdd();
-      }
+     addFn: (n)=>{
+  addPlayer(n, null);
+  nudge('Player added', 'success');
+  closeQuickAdd();
+}
     });
     return;
   }
 
-  addPlayer(name, quickPhotoData);
-  closeQuickAdd();
+ addPlayer(name, quickPhotoData);
+nudge('Player added', 'success');
+closeQuickAdd();
 };
 }
 
@@ -2818,17 +2804,19 @@ addPlayerBtn.onclick = async ()=>{
       source: 'setup',
       name,
       openPhotoFn: ()=>{ pphoto.click(); },
-      addFn: (n)=>{
-        addPlayer(n, null);
-        pname.value = '';
-        pphoto.value = '';
-      }
+    addFn: (n)=>{
+  addPlayer(n, null);
+  nudge('Player added', 'success');
+  pname.value = '';
+  pphoto.value = '';
+}
     });
     return;
   }
 
   const data = await fileToCompressedDataURL(f,256).catch(()=>null);
   addPlayer(name, data);
+  nudge('Player added', 'success');
 
   pname.value = '';
   pphoto.value = '';
