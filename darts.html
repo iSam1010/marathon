@@ -1682,6 +1682,29 @@ const eventIdInput = $('#eventId');
 const startJoinBtn = $('#startJoin');
 const joinBtn = $('#joinBtn');
 const refreshBtn = $('#refreshBtn');
+  pname.addEventListener('keydown', async (e)=>{
+  if (e.key === 'Enter'){
+    e.preventDefault();
+
+    const name = (pname.value || '').trim();
+    if (!name){
+      pname.focus();
+      return;
+    }
+
+    const f = pphoto.files[0];
+    let data = null;
+
+    if (f){
+      data = await fileToCompressedDataURL(f,256).catch(()=>null);
+    }
+
+    addPlayer(name, data);
+
+    pname.value = '';
+    pphoto.value = '';
+  }
+});
 const quickAddBtn = $('#quickAddBtn');
 const quickAddMask = $('#quickAddMask');
 const quickName = $('#quickName');
@@ -1691,6 +1714,12 @@ const quickPreviewWrap = $('#quickPreviewWrap');
 const quickRemovePhoto = $('#quickRemovePhoto');
 const quickCancel = $('#quickCancel');
 const quickAddConfirm = $('#quickAddConfirm');
+  quickName.addEventListener('keydown', (e)=>{
+  if (e.key === 'Enter'){
+    e.preventDefault();
+    quickAddConfirm.click();
+  }
+});
 
 let quickPhotoData = null;
 // Refresh page with confirmation
